@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Chúc Mừng Sinh Nhật 🎂</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Chuyển động mượt cho nút Không khi nhảy */
+        #btn-no {
+            transition: left 0.15s ease-out, top 0.15s ease-out;
+        }
+
+        /* Hiệu ứng nhấp nhô nhẹ cho icon */
+        .bounce-slow {
+            animation: bounceSlow 2s infinite ease-in-out;
+        }
+
+        @keyframes bounceSlow {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+    </style>
+</head>
+<body class="bg-pink-50 w-screen h-screen flex items-center justify-center relative overflow-hidden">
+
+    <!-- Canvas Pháo Giấy -->
+    <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-40"></canvas>
+
+    <!-- MÀN HÌNH 1: CÂU HỎI -->
+    <div id="screen-question" class="z-20 w-[90%] max-w-sm bg-white rounded-3xl shadow-xl p-7 sm:p-8 text-center border border-pink-100">
+        <div id="emoji-face" class="text-6xl mb-4 bounce-slow">
+            🥺
+        </div>
+
+        <p class="text-gray-500 font-medium text-sm sm:text-base mb-2">
+            Hôm nay sinh nhật cậu đúng không? Cho tớ hỏi thật nhé...
+        </p>
+
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-8">
+            Cậu có ghét tớ không? 🥺
+        </h1>
+
+        <!-- Khu vực 2 nút -->
+        <div id="button-container" class="flex items-center justify-center gap-4 min-h-[60px]">
+            <!-- Nút Có -->
+            <button id="btn-yes" class="px-8 py-3 bg-pink-500 hover:bg-pink-600 text-white font-bold rounded-2xl shadow-md active:scale-95 transition-transform text-lg cursor-pointer">
+                Có
+            </button>
+
+            <!-- Nút Không (Chạy trốn) -->
+            <button id="btn-no" class="px-8 py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-2xl shadow-sm text-lg cursor-pointer">
+                Không
+            </button>
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH 2: CHÚC MỪNG SINH NHẬT -->
+    <div id="screen-birthday" class="hidden z-20 w-[90%] max-w-sm bg-white rounded-3xl shadow-xl p-7 sm:p-8 text-center border border-pink-100">
+        <div class="text-6xl mb-4 bounce-slow">
+            🎂🎉
+        </div>
+
+        <h2 class="text-xl sm:text-2xl font-bold text-pink-600 mb-3">
+            Biết ngay! 🤣
+        </h2>
+
+        <p class="text-gray-700 font-medium text-base leading-relaxed mb-6">
+            Đùa thôi, chúc mừng sinh nhật cậu nhé! 🎂🎉<br><br>
+            Chúc cậu tuổi mới luôn vui vẻ, hay ăn chóng lớn và gặp thật nhiều may mắn 🎉🥳
+        </p>
+
+        <button id="btn-replay" class="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold rounded-xl text-sm transition cursor-pointer">
+            Chơi lại
+        </button>
+    </div>
+
+    <!-- FOOTER CỐ ĐỊNH Ở CUỐI TRANG -->
+    <footer class="fixed bottom-4 left-0 right-0 text-center z-10 pointer-events-none">
+        <p class="text-pink-400/90 text-xs sm:text-sm font-semibold tracking-wide italic">
+            From Lê Hoàng Ánh Nguyệt with love ❤️
+        </p>
+    </footer>
+
+    <script>
+        const btnNo = document.getElementById('btn-no');
+        const btnYes = document.getElementById('btn-yes');
+        const btnReplay = document.getElementById('btn-replay');
+        const screenQuestion = document.getElementById('screen-question');
+        const screenBirthday = document.getElementById('screen-birthday');
+        const buttonContainer = document.getElementById('button-container');
+        const emojiFace = document.getElementById('emoji-face');
+
+        let yesScale = 1;
+        let isFloating = false;
+        const emojis = ['🥺', '🤨', '😏', '🤭', '😂', '🤣'];
+        let dodgeCount = 0;
+
+        // Hàm làm nút "Không" nhảy đi chỗ khác
+        function moveNoButton(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            dodgeCount++;
+            emojiFace.textContent = emojis[Math.min(dodgeCount, emojis.length - 1)];
+
+            // Chuyển nút Không sang fixed ở lần chạy đầu tiên để bay khắp màn hình
+            if (!isFloating) {
+                const rect = btnNo.getBoundingClientRect();
+                isFloating = true;
+                btnNo.style.position = 'fixed';
+                btnNo.style.left = `${rect.left}px`;
+                btnNo.style.top = `${rect.top}px`;
+                btnNo.style.zIndex = '50';
+                document.body.appendChild(btnNo);
+            }
+
+            const padding = 20;
+            const btnWidth = btnNo.offsetWidth || 100;
+            const btnHeight = btnNo.offsetHeight || 48;
+
+            const maxX = Math.max(padding, window.innerWidth - btnWidth - padding);
+            const maxY = Math.max(padding, window.innerHeight - btnHeight - padding);
+
+            const yesRect = btnYes.getBoundingClientRect();
+            let newX, newY;
+            let tries = 0;
+
+            // Tìm vị trí ngẫu nhiên không đè lên nút "Có"
+            do {
+                newX = Math.floor(Math.random() * (maxX - padding + 1)) + padding;
+                newY = Math.floor(Math.random() * (maxY - padding + 1)) + padding;
+                tries++;
+            } while (
+                tries < 15 &&
+                newX + btnWidth > yesRect.left - 25 &&
+                newX < yesRect.right + 25 &&
+                newY + btnHeight > yesRect.top - 25 &&
+                newY < yesRect.bottom + 25
+            );
+
+            btnNo.style.left = `${newX}px`;
+            btnNo.style.top = `${newY}px`;
+
+            // Nút "Có" to lên nhẹ mỗi lần nút "Không" chạy trốn
+            yesScale = Math.min(1.6, yesScale + 0.08);
+            btnYes.style.transform = `scale(${yesScale})`;
+        }
+
+        // Sự kiện trên máy tính và điện thoại cho nút Không
+        btnNo.addEventListener('mouseenter', moveNoButton);
+        btnNo.addEventListener('touchstart', moveNoButton, { passive: false });
+        btnNo.addEventListener('click', moveNoButton);
+
+        // Phát hiện chuột lại gần nút Không trên máy tính
+        document.addEventListener('mousemove', (e) => {
+            if (screenQuestion.classList.contains('hidden')) return;
+            const rect = btnNo.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const distance = Math.hypot(e.clientX - centerX, e.clientY - centerY);
+
+            if (distance < 60) {
+                moveNoButton();
+            }
+        });
+
+        // Khi bấm nút "Có"
+        btnYes.addEventListener('click', () => {
+            btnNo.classList.add('hidden');
+            screenQuestion.classList.add('hidden');
+            screenBirthday.classList.remove('hidden');
+            fireConfetti();
+        });
+
+        // Khi bấm "Chơi lại"
+        btnReplay.addEventListener('click', () => {
+            dodgeCount = 0;
+            yesScale = 1;
+            isFloating = false;
+            emojiFace.textContent = '🥺';
+
+            btnYes.style.transform = 'scale(1)';
+            btnNo.style.position = '';
+            btnNo.style.left = '';
+            btnNo.style.top = '';
+            btnNo.classList.remove('hidden');
+            buttonContainer.appendChild(btnNo);
+
+            screenBirthday.classList.add('hidden');
+            screenQuestion.classList.remove('hidden');
+        });
+
+        // Hiệu ứng pháo giấy đơn giản
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+        let animId = null;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        const colors = ['#f43f5e', '#ec4899', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6'];
+
+        function fireConfetti() {
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 14,
+                    vy: -(Math.random() * 12 + 4),
+                    size: Math.random() * 7 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rotation: Math.random() * 360,
+                    rotSpeed: (Math.random() - 0.5) * 10,
+                    gravity: 0.25,
+                    opacity: 1
+                });
+            }
+            if (!animId) updateConfetti();
+        }
+
+        function updateConfetti() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += p.gravity;
+                p.rotation += p.rotSpeed;
+                if (p.y > canvas.height - 60) p.opacity -= 0.04;
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, p.opacity);
+                ctx.translate(p.x, p.y);
+                ctx.rotate((p.rotation * Math.PI) / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+                ctx.restore();
+            });
+
+            particles = particles.filter(p => p.opacity > 0);
+            if (particles.length > 0) {
+                animId = requestAnimationFrame(updateConfetti);
+            } else {
+                animId = null;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+    </script>
+</body>
+</html>
